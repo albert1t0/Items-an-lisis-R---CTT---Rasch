@@ -1,0 +1,267 @@
+---
+title: "Análisis IRT - Agosto"
+author: "CMEC - PUCP"
+date: "23/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(eRm)
+library(CTT)
+library(DT)
+library(rio)
+```
+
+```{r}
+ciencias <- read.fwf("./Respuestas/Simulacro_ciencias.txt", c(5,48,24,24),
+                         colClasses = "character", col.names = c("code", "mat","red","lec"))
+
+ibio <- read.fwf("./Respuestas/Simulacro_ciencias_ibio.txt", c(5,48,24,24),
+                         colClasses = "character", col.names = c("code", "mat","red","lec"))
+
+ciencias <- bind_rows(ciencias, ibio)
+
+letras <- read.fwf("./Respuestas/Simulacro_letras.txt", c(5,28,28,40),
+                         colClasses = "character", col.names = c("code", "lec","red","mat"))
+```
+
+```{r}
+
+ciencias_mat <- data.frame(matrix(unlist(strsplit(ciencias$mat, "")), 
+                                      nrow = dim(ciencias)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(ciencias_mat) <- paste0("item-",1:dim(ciencias_mat)[2])
+ciencias_red <- data.frame(matrix(unlist(strsplit(ciencias$red, "")), 
+                                      nrow = dim(ciencias)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(ciencias_red) <- paste0("item-",1:dim(ciencias_red)[2])
+ciencias_lec <- data.frame(matrix(unlist(strsplit(ciencias$lec, "")), 
+                                      nrow = dim(ciencias)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(ciencias_lec) <- paste0("item-",1:dim(ciencias_lec)[2])
+```
+
+```{r}
+letras_mat <- data.frame(matrix(unlist(strsplit(letras$mat, "")), 
+                                      nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(letras_mat) <- paste0("item-",1:dim(letras_mat)[2])
+letras_red <- data.frame(matrix(unlist(strsplit(letras$red, "")), 
+                                      nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(letras_red) <- paste0("item-",1:dim(letras_red)[2])
+letras_lec <- data.frame(matrix(unlist(strsplit(letras$lec, "")), 
+                                      nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(letras_lec) <- paste0("item-",1:dim(letras_lec)[2])
+```
+
+```{r}
+ciencias.mat <- score(ciencias_mat, rep("A", 48), output.scored = TRUE)
+ciencias.red <- score(ciencias_red, rep("A", 24), output.scored = TRUE)
+ciencias.lec <- score(ciencias_lec, rep("A", 24), output.scored = TRUE)
+
+letras.mat <- score(letras_mat, rep("A", 40), output.scored = TRUE)
+letras.red <- score(letras_red, rep("A", 28), output.scored = TRUE)
+letras.lec <- score(letras_lec, rep("A", 28), output.scored = TRUE)
+
+```
+
+```{r}
+rciencias.mat <- RM(ciencias.mat$scored, se = TRUE, sum0 = TRUE)
+rciencias.red <- RM(ciencias.red$scored, se = TRUE, sum0 = TRUE)
+rciencias.lec <- RM(ciencias.lec$scored, se = TRUE, sum0 = TRUE)
+
+pciencias.mat <- person.parameter(rciencias.mat)
+pciencias.red <- person.parameter(rciencias.red)
+pciencias.lec <- person.parameter(rciencias.lec)
+
+fciencias.mat <- itemfit(pciencias.mat)
+fciencias.red <- itemfit(pciencias.red)
+fciencias.lec <- itemfit(pciencias.lec)
+
+pfciencias.mat <- personfit(pciencias.mat)
+pfciencias.red <- personfit(pciencias.red)
+pfciencias.lec <- personfit(pciencias.lec)
+
+sepciencias.mat <- SepRel(pciencias.mat)
+sepciencias.red <- SepRel(pciencias.red)
+sepciencias.lec <- SepRel(pciencias.lec)
+
+```
+
+```{r}
+rletras.mat <- RM(letras.mat$scored, se = TRUE, sum0 = TRUE)
+rletras.red <- RM(letras.red$scored, se = TRUE, sum0 = TRUE)
+rletras.lec <- RM(letras.lec$scored, se = TRUE, sum0 = TRUE)
+
+pletras.mat <- person.parameter(rletras.mat)
+pletras.red <- person.parameter(rletras.red)
+pletras.lec <- person.parameter(rletras.lec)
+
+fletras.mat <- itemfit(pletras.mat)
+fletras.red <- itemfit(pletras.red)
+fletras.lec <- itemfit(pletras.lec)
+
+pfletras.mat <- personfit(pletras.mat)
+pfletras.red <- personfit(pletras.red)
+pfletras.lec <- personfit(pletras.lec)
+
+sepletras.mat <- SepRel(pletras.mat)
+sepletras.red <- SepRel(pletras.red)
+sepletras.lec <- SepRel(pletras.lec)
+
+```
+
+## Estadísticos por versión
+
+| Grupo    | Evaluados            |
+|----------|----------------------|
+| Ciencias | `r dim(ciencias)[1]` |
+| Letras   | `r dim(letras)[1]`   |
+
+### Indicadores de confiabilidad
+
+| Grupo    | Comprensión de textos             | Redacción (reconocimiento)        | Resolución de problemas           |
+|----------|-----------------------------------|-----------------------------------|-----------------------------------|
+| Ciencias | `r round(sepciencias.lec[[1]],3)` | `r round(sepciencias.red[[1]],3)` | `r round(sepciencias.mat[[1]],3)` |
+| Letras   | `r round(sepletras.lec[[1]],3)`   | `r round(sepletras.red[[1]],3)`   | `r round(sepletras.mat[[1]],3)`   |
+
+```{r}
+str.ciencias <- import("./Estructuras/00918_Versión_ciencias_COMPLETO.xls", sheet = 1, skip = 2, col_names = TRUE)
+
+str.letras <- import("./Estructuras/00918_Versión_letras_COMPLETO.xls", sheet = 1, skip = 2, col_names = TRUE)
+
+```
+
+```{r}
+# Comparar versiones dificultades
+indicec_mat <- !is.na(str.ciencias$Medición[1:48])
+indicec_red <- !is.na(str.ciencias$Medición[49:72])
+indicec_lec <- !is.na(str.ciencias$Medición[73:96])
+
+dstr.ciencias <- str.ciencias$Medición
+  
+dstr.ciencias.mat <- dstr.ciencias[1:48][indicec_mat] - 
+  (mean(dstr.ciencias[1:48][indicec_mat]) - mean(-rciencias.mat$betapar[indicec_mat]))
+dstr.ciencias.red <- dstr.ciencias[49:72][indicec_red] -
+  (mean(dstr.ciencias[49:72][indicec_red]) - mean(-rciencias.red$betapar[indicec_red]))
+dstr.ciencias.lec <- dstr.ciencias[73:96][indicec_lec] - 
+  (mean(dstr.ciencias[73:96][indicec_lec]) - mean(-rciencias.lec$betapar[indicec_lec]))
+
+indicel_lec <- !is.na(str.letras$Medición[1:28])
+indicel_red <- !is.na(str.letras$Medición[29:56])
+indicel_mat <- !is.na(str.letras$Medición[57:96])
+
+dstr.letras <- str.letras$Medición
+
+dstr.letras.lec <- dstr.letras[1:28][indicel_lec] - (mean(dstr.letras[1:28][indicel_lec]) - mean(-rletras.lec$betapar[indicel_lec]))
+dstr.letras.red <- dstr.letras[29:56][indicel_red] - (mean(dstr.letras[29:56][indicel_red]) - mean(-rletras.red$betapar[indicel_red]))
+dstr.letras.mat <- dstr.letras[57:96][indicel_mat] - (mean(dstr.letras[57:96][indicel_mat]) - mean(-rletras.mat$betapar[indicel_mat]))
+
+```
+
+```{r}
+
+plot(dstr.ciencias.mat, -rciencias.mat$betapar[indicec_mat], type = "none", cex = 0.7)
+text(dstr.ciencias.mat, -rciencias.mat$betapar[indicec_mat], c(1:48)[indicec_mat])
+abline(0,1)
+abline(-0.5,1, col = "red", lty = "dashed")
+abline(0.5,1, col = "red", lty = "dashed")
+
+temp.diff <- c(6,8,10,12) # Se retiran de anclaje 19,32,37,44
+
+diff.ciencias.mat <- mean(dstr.ciencias.mat[-temp.diff]) - 
+  mean(-rciencias.mat$betapar[1:48][indicec_mat][-temp.diff])
+
+plot(dstr.ciencias.red, -rciencias.red$betapar[indicec_red], type = "none", cex = 0.7)
+text(dstr.ciencias.red, -rciencias.red$betapar[indicec_red], c(1:24)[indicec_red])
+abline(0,1)
+abline(-0.5,1, col = "red", lty = "dashed")
+abline(0.5,1, col = "red", lty = "dashed")
+
+diff.ciencias.red <- mean(dstr.ciencias.red) - mean(-rciencias.red$betapar)
+
+plot(dstr.ciencias.lec, -rciencias.lec$betapar[indicec_lec], type = "none", cex = 0.7)
+text(dstr.ciencias.lec, -rciencias.lec$betapar[indicec_lec], c(1:24)[indicec_lec])
+abline(0,1)
+abline(-0.5,1, col = "red", lty = "dashed")
+abline(0.5,1, col = "red", lty = "dashed")
+
+temp.diff <- 7  # Se retiran 23
+diff.ciencias.lec <- mean(dstr.ciencias.lec[-temp.diff]) - 
+  mean(-rciencias.lec$betapar[-temp.diff])
+
+plot(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], type = "none", cex = 0.7)
+text(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], c(1:28)[indicel_lec])
+abline(0,1)
+abline(-0.5,1, col = "red", lty = "dashed")
+abline(0.5,1, col = "red", lty = "dashed")
+
+diff.letras.lec <- mean(dstr.letras.lec) - mean(-rletras.lec$betapar)
+
+plot(dstr.letras.red, -rletras.red$betapar[indicel_red], type = "none", cex = 0.7)
+text(dstr.letras.red, -rletras.red$betapar[indicel_red], c(1:28)[indicel_red])
+abline(0,1)
+abline(-0.5,1, col = "red", lty = "dashed")
+abline(0.5,1, col = "red", lty = "dashed")
+
+temp.diff <- c(6,9) # Se retira el 16 y 25
+diff.letras.red <- mean(dstr.letras.red[-temp.diff]) - 
+  mean(-rletras.red$betapar[-temp.diff])
+
+plot(dstr.letras.mat, -rletras.mat$betapar[indicel_mat], type = "none", cex = 0.7)
+text(dstr.letras.mat, -rletras.mat$betapar[indicel_mat], c(1:40)[indicel_mat])
+abline(0,1)
+abline(-0.5,1, col = "red", lty = "dashed")
+abline(0.5,1, col = "red", lty = "dashed")
+
+temp.diff <- c(4,9,10) # Se retira 13, 34 y 36
+diff.letras.mat <- mean(dstr.letras.mat[-temp.diff]) - 
+  mean(-rletras.mat$betapar[-temp.diff])
+
+```
+
+```{r}
+estructura.ciencias <- data.frame(
+  medicion = c(-rciencias.mat$betapar + diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat]),
+               -rciencias.red$betapar + diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),
+               -rciencias.lec$betapar + diff.ciencias.lec + mean(dstr.ciencias[73:96][indicec_lec])),
+  error = c(rciencias.mat$se.beta,
+            rciencias.red$se.beta,
+            rciencias.lec$se.beta)
+  )
+
+estructura.letras <- data.frame(
+  medicion = c(-rletras.lec$betapar + diff.letras.lec + mean(dstr.letras[1:28][indicel_lec]),
+               -rletras.red$betapar + diff.letras.red + mean(dstr.letras[29:56][indicel_red]),
+               -rletras.mat$betapar + diff.letras.mat + mean(dstr.letras[57:96][indicel_mat])),
+  error = c(rletras.lec$se.beta,
+            rletras.red$se.beta,
+            rletras.mat$se.beta)
+  )
+
+```
+
+```{r}
+write.csv(estructura.ciencias1, "./Estructura_ciencias1B.csv", row.names = FALSE)
+write.csv(estructura.ciencias2, "./Estructura_ciencias2B.csv", row.names = FALSE)
+write.csv(estructura.letras1, "./Estructura_letras1B.csv", row.names = FALSE)
+write.csv(estructura.letras2, "./Estructura_letras2B.csv", row.names = FALSE)
+```
+
+```{r}
+
+# En este bloque se arma la prueba con puntajes parciales para valida la posibilidad
+# de utilziar puntajes brutos para el concurso de admisión.
+
+# Versión 1 ciencias
+
+v1ciencias <- bind_cols(ciencias1$code,
+                        ciencias1.mat$score,
+                        ciencias1.red$score,
+                        ciencias1.lec$score,
+                        pciencias1.mat[["theta.table"]][["Person Parameter"]],
+                        pciencias1.red[["theta.table"]][["Person Parameter"]],
+                        pciencias1.lec[["theta.table"]][["Person Parameter"]]) 
+names(v1ciencias) <- c("code", "mat", "red", "lec", "smat", "sred", "slec")
+
+
+```

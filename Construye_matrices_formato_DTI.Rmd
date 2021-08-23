@@ -106,16 +106,18 @@ evaluado.sim <- read.xlsx("./Datos/InformacionCandidatos_SIM.xlsx", sheet = 1, s
 evaluado.its <- read.xlsx("./Datos/InformacionCandidatos_ITS.xlsx", sheet = 1, startRow = 3)
 evaluado.ibio <- read.xlsx("./Datos/InformacionCandidatos_IBIO.xlsx", sheet = 1, startRow = 3)
 
-# Datos de los exámenes
-examen.sim <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00918_SIM.csv", sheet = 1)
-examen.its <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00902_ITS.csv", sheet = 1)
-examen.ibio <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00919_IBIO.csv", sheet = 1)
+evaluado.ibio$DNI <- as.character(evaluado.ibio$DNI)
 
-datos.sim <- evaluado.sim %>% select(DNI, EMAIL) %>% left_join(evaluado.sim, by = "DNI") %>% 
+# Datos de los exámenes
+examen.sim <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00918_SIM.xlsx", sheet = 1)
+examen.its <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00902_ITS.xlsx", sheet = 1)
+examen.ibio <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00919_IBIO.xlsx", sheet = 1)
+
+datos.sim <- evaluado.sim %>% select(CANDIDATO, EMAIL) %>% left_join(examen.sim, by = c("CANDIDATO" = "CODIGO")) %>% 
     select(EMAIL, EXAMEN)
-datos.its <- evaluado.its %>% select(DNI, EMAIL) %>% left_join(evaluado.its, by = "DNI") %>% 
+datos.its <- evaluado.its %>% select(CANDIDATO, EMAIL) %>% left_join(examen.its, by = c("CANDIDATO" = "CODIGO")) %>% 
     select(EMAIL, EXAMEN)
-datos.ibio <- evaluado.ibio %>% select(DNI, EMAIL) %>% left_join(evaluado.ibio, by = "DNI") %>% 
+datos.ibio <- evaluado.ibio %>% select(CANDIDATO, EMAIL) %>% left_join(examen.ibio, by = c("CANDIDATO" = "CODIGO")) %>% 
     select(EMAIL, EXAMEN)
 
 ciencias <- datos.sim %>% inner_join(ciencias, by = c("EMAIL" = "...1")) %>% select(-1) %>% 
@@ -135,16 +137,16 @@ its.letras <- datos.its %>% inner_join(its.letras, by = c("EMAIL" = "...1")) %>%
 6. Escribir las matrices resultantes
 
 ```{r}
-write.fwf(ciencias, "Simulacro_ciencias.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+write.fwf(ciencias, "Simulacro_ciencias.txt", rownames = FALSE, colnames = FALSE, sep = "", 
           eol = "\r\n")
-write.fwf(its.ciencias, "Simulacro_ciencias_its.txt", rownames = FALSE, colnames = FALSE,
-          sep + "", eol = "\r\n")
-write.fwf(ibio, "Simulacro_ciencias_ibio.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+#write.fwf(its.ciencias, "Simulacro_ciencias_its.txt", rownames = FALSE, colnames = FALSE,
+#          sep = "", eol = "\r\n")
+write.fwf(ibio, "Simulacro_ciencias_ibio.txt", rownames = FALSE, colnames = FALSE, sep = "", 
           eol = "\r\n")
 
-write.fwf(letras, "Simulacro_letras.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+write.fwf(letras, "Simulacro_letras.txt", rownames = FALSE, colnames = FALSE, sep = "", 
           eol = "\r\n")
-write.fwf(its.letras, "Simulacro_letras_its.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+write.fwf(its.letras, "Simulacro_letras_its.txt", rownames = FALSE, colnames = FALSE, sep = "", 
           eol = "\r\n")
 
 ```

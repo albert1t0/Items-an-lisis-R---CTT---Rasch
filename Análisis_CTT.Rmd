@@ -1,0 +1,232 @@
+---
+title: "Análisis de CTT y de alternativas - Agosto 2021"
+author: "CMEC - PUCP"
+date: "23/8/2021"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(eRm)
+library(CTT)
+library(DT)
+library(openxlsx)
+```
+
+```{r}
+sim.ciencias <- read.fwf(
+  "./Respuestas/Simulacro_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+its.ciencias <- read.fwf(
+  "./Respuestas/Simulacro_ciencias_its.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+ibio <- read.fwf(
+  "./Respuestas/Simulacro_ciencias_ibio.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+sim.letras <- read.fwf(
+  "./Respuestas/Simulacro_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+its.letras <- read.fwf(
+  "./Respuestas/Simulacro_letras_its.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+
+ciencias <- bind_rows(sim.ciencias, its.ciencias, ibio)
+letras <- bind_rows(sim.letras, its.letras)
+
+```
+
+```{r}
+ciencias_mat <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$mat, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_mat) <- paste0("item-", 1:dim(ciencias_mat)[2])
+ciencias_red <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$red, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_red) <- paste0("item-", 1:dim(ciencias_red)[2])
+ciencias_lec <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$lec, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_lec) <- paste0("item-", 1:dim(ciencias_lec)[2])
+```
+
+
+```{r}
+letras_mat <- data.frame(matrix(unlist(strsplit(letras$mat, "")), 
+                                      nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(letras_mat) <- paste0("item-",1:dim(letras_mat)[2])
+letras_red <- data.frame(matrix(unlist(strsplit(letras$red, "")), 
+                                      nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(letras_red) <- paste0("item-",1:dim(letras_red)[2])
+letras_lec <- data.frame(matrix(unlist(strsplit(letras$lec, "")), 
+                                      nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
+names(letras_lec) <- paste0("item-",1:dim(letras_lec)[2])
+```
+
+
+```{r}
+ciencias.mat <- score(ciencias_mat, rep("A", 48), output.scored = TRUE)
+ciencias.red <- score(ciencias_red, rep("A", 24), output.scored = TRUE)
+ciencias.lec <- score(ciencias_lec, rep("A", 24), output.scored = TRUE)
+
+letras.mat <- score(letras_mat, rep("A", 40), output.scored = TRUE)
+letras.red <- score(letras_red, rep("A", 28), output.scored = TRUE)
+letras.lec <- score(letras_lec, rep("A", 28), output.scored = TRUE)
+
+```
+
+```{r}
+cciencias.mat <- itemAnalysis(ciencias.mat[[2]])
+cciencias.red <- itemAnalysis(ciencias.red[[2]])
+cciencias.lec <- itemAnalysis(ciencias.lec[[2]])
+
+cletras.mat <- itemAnalysis(letras.mat[[2]])
+cletras.red <- itemAnalysis(letras.red[[2]])
+cletras.lec <- itemAnalysis(letras.lec[[2]])
+```
+
+```{r}
+aciencias.mat <- distractorAnalysis(ciencias_mat, rep("A", 48), digits = 2)
+aciencias.red <- distractorAnalysis(ciencias_red, rep("A", 24), digits = 2)
+aciencias.lec <- distractorAnalysis(ciencias_lec, rep("A", 24), digits = 2)
+
+aletras.mat <- distractorAnalysis(letras_mat, rep("A", 40), digits = 2)
+aletras.red <- distractorAnalysis(letras_red, rep("A", 28), digits = 2)
+aletras.lec <- distractorAnalysis(letras_lec, rep("A", 28), digits = 2)
+```
+
+## Estadísticos por versión
+
+| Grupo       | Evaluados             |
+|-------------|-----------------------|
+| Ciencias    | `r dim(ciencias)[1]` |
+| Letras      | `r dim(letras)[1]`   |
+
+### Indicadores de confiabilidad
+
+| Grupo       |        Comprensión de textos      |      Redacción (reconocimiento)     |     Resolución de problemas       |
+|-------------|----------------------------------|-----------------------------------|--------------------------------|
+| Ciencias    | `r round(cciencias.lec$alpha,3)` | `r round(cciencias.red$alpha,3)`   | `r round(cciencias.mat$alpha,3)` |
+| Letras      | `r round(cletras.lec$alpha,3)`   | `r round(cletras.red$alpha,3)`     | `r round(cletras.mat$alpha,3)`   |
+
+### Indicadores de ítems por versión
+
+```{r}
+versiones <- c("Ciencias", "Letras")
+secciones <- c("Lectura", "Matemática", "Redacción")
+selectInput("version", "Seleccione la versión de prueba", versiones)
+selectInput("seccion", "Seleccione la versión de prueba", secciones)
+```
+
+```{r}
+tabla <- reactive({
+        if (input$version == "Ciencias" & input$seccion == "Lectura") {
+            reporte <- cciencias.lec$itemReport
+            alternativas <- aciencias.lec }
+        else if (input$version == "Ciencias" & input$seccion == "Matemática") {
+            reporte <- cciencias.mat$itemReport
+            alternativas <- aciencias.mat }
+        else if (input$version == "Ciencias" & input$seccion == "Redacción") {
+            reporte <- cciencias.red$itemReport
+            alternativas <- aciencias.red }
+        else if (input$version == "Letras" & input$seccion == "Lectura") {
+            reporte <- cletras.lec$itemReport
+            alternativas <- aletras.lec }
+        else if (input$version == "Letras" & input$seccion == "Matemática") {
+            reporte <- cletras.mat$itemReport
+            alternativas <- aletras.mat }
+        else if (input$version == "Letras" & input$seccion == "Redacción") {
+            reporte <- cletras.red$itemReport
+            alternativas <- aletras.red }
+        list(reporte %>% mutate_if(is.numeric, round, digits = 3), alternativas)
+})
+
+output$version <- renderDataTable(tabla()[[1]],
+         options = list( language = list(url =  '//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json'),
+                               paging = TRUE,
+                               searching = FALSE
+                               ), rownames = FALSE)
+
+dataTableOutput("version")
+```
+
+### Análisis de alternativas por versión
+
+```{r}
+output$out1 <- renderUI({
+      selectInput(
+            "nnombres",
+            "Selecciones el ítem",
+            choices = names(tabla()[[2]]),
+            selected = 1
+      )
+      
+})
+
+uiOutput("out1")
+
+output$out2 <- renderDataTable(tabla()[[2]][[input$nnombres]],
+                               options = list( language = list(
+                                     url  = '//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json'),
+                               paging = FALSE,
+                               searching = FALSE
+                               ), rownames = FALSE
+            )
+
+dataTableOutput("out2")
+
+```
+
+```{r}
+pun.ciencias <- data.frame(Id = ciencias$code, Matemática = ciencias.mat$score, 
+                             Redacción = ciencias.red$score, Lectura = ciencias.lec$score)
+
+pun.letras <- data.frame(Id = letras$code, Lectura = letras.lec$score, 
+                             Redacción = letras.red$score, Matemática = letras.mat$score)
+
+```
+
+```{r}
+#write.csv(pun.ciencias, "./Puntaje_ciencias.csv")
+#write.csv(pun.letras, "./Puntaje_letras.csv")
+
+pun.et <- bind_rows(pun.ciencias, pun.letras)
+write.csv(pun.et, "./Puntaje_ET.csv", row.names = FALSE)
+
+```
+
