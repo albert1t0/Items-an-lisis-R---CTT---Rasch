@@ -1,0 +1,153 @@
+---
+title: "Construye_matriz_respuestas"
+author: "CMEC - PUCP"
+date: "23/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(openxlsx)
+library(tidyverse)
+library(gdata)
+
+# Funciones
+
+# números del 1-4 a alfa de A-D caracteres
+alternativas <- function(x) {
+    alt <- ifelse(is.na(x), " ",
+                  ifelse( x == "1", "A",
+                          ifelse( x == "2", "B",
+                                  ifelse( x == "3", "C",
+                                         ifelse( x == "4", "D", " ")))))
+    return(alt)
+}
+
+
+```
+
+## Carga de los datos necesarios
+
+1. Primero se necesita la matriz de identificadores de ítems que se cargaron a la
+plataforma de evaluación (Mettl).
+
+```{r}
+id.items <- read.xlsx("./Datos/ID_items_SimAgo21-general.xlsx", sheet = 1) %>% 
+    select("Question.Text", "Question.ID")
+```
+
+2. Se construye el identificador de versión e item a partir de la etiqueta utilizada en el archivo de carga de preguntas.
+
+```{r}
+id.items$version <- substr(id.items$Question.Text,5,5)
+id.items$orden <- as.numeric(substr(id.items$Question.Text,7,8))
+
+id.items$orden <- ifelse((id.items$version == "C") &
+                             (substr(id.items$Question.Text,1,3) == "LEC"), id.items$orden + 72,
+                         ifelse((id.items$version == "C") &
+                             (substr(id.items$Question.Text,1,3) == "RED"), id.items$orden + 48,
+                             id.items$orden))
+id.items$orden <- ifelse((id.items$version == "L") &
+                             (substr(id.items$Question.Text,1,3) == "MAT"), id.items$orden + 56,
+                         ifelse((id.items$version == "L") &
+                             (substr(id.items$Question.Text,1,3) == "RED"), id.items$orden + 28,
+                             id.items$orden))
+
+id.items <- id.items %>% arrange(version, orden)
+```
+
+3. Se cargan las matrices de respuestas descargadas de la plataforma de evaluación.
+
+```{r}
+ciencias <- read.xlsx("./Respuestas/Simulacro ciencias.xlsx", sheet = 1, startRow = 3)
+its.ciencias <- read.xlsx("./Respuestas/ITS Plus Ciencias.xlsx", sheet = 1, startRow = 3)
+ibio <- read.xlsx("./Respuestas/Ingeniería - biomédica.xlsx", sheet = 1, startRow = 3)
+
+letras <- read.xlsx("./Respuestas/Simulacro_letras.xlsx", sheet = 1, startRow = 3)
+its.letras <- read.xlsx("./Respuestas/ITS_Plus_Letras.xlsx", sheet = 1, startRow = 3)
+
+# Orden en que aparecen en las versiones los ítems esta vez es único para letras y ciencias y
+# se repiten en las demás versiones.
+
+orden.cie <- as.character(id.items$Question.ID[id.items$version == "C"])
+orden.let <- as.character(id.items$Question.ID[id.items$version == "L"])
+
+# Se seleccionan el e-mail como identificador y el orden se ordenan los ítems de
+# las tablas cargadas.
+
+ciencias <- ciencias[,c("Test-Taker.Email", orden.cie)]
+its.ciencias <- its.ciencias[,c("Test-Taker.Email", orden.cie)]
+ibio <- ibio[,c("Test-Taker.Email", orden.cie)]
+
+letras <- letras[,c("Test-Taker.Email", orden.let)]
+its.letras <- its.letras[,c("Test-Taker.Email", orden.let)]
+
+```
+
+4. Se reemplazan las alternativas numéricas a letras A-D, se utilzia función.
+
+```{r message=FALSE}
+ciencias <- bind_cols(ciencias$`Test-Taker.Email`, as.data.frame(lapply(ciencias[,2:97], alternativas)))
+its.ciencias <- bind_cols(its.ciencias$`Test-Taker.Email`, as.data.frame(lapply(its.ciencias[,2:97], alternativas)))
+ibio <- bind_cols(ibio$`Test-Taker.Email`, as.data.frame(lapply(ibio[,2:97], alternativas)))
+
+letras <- bind_cols(letras$`Test-Taker.Email`, as.data.frame(lapply(letras[,2:97], alternativas)))
+its.letras <- bind_cols(its.letras$`Test-Taker.Email`, as.data.frame(lapply(its.letras[,2:97], alternativas)))
+
+```
+
+5. Se recupera datos de los evaluados del sistema de calificación DTI
+
+```{r}
+
+# Datos evaluados
+evaluado.sim <- read.xlsx("./Datos/InformacionCandidatos_SIM.xlsx", sheet = 1, startRow = 3)
+evaluado.its <- read.xlsx("./Datos/InformacionCandidatos_ITS.xlsx", sheet = 1, startRow = 3)
+evaluado.ibio <- read.xlsx("./Datos/InformacionCandidatos_IBIO.xlsx", sheet = 1, startRow = 3)
+
+# Datos de los exámenes
+examen.sim <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00918_SIM.csv", sheet = 1)
+examen.its <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00902_ITS.csv", sheet = 1)
+examen.ibio <- read.xlsx("./Datos/Informacion_impresion_fichas_opticas_admision_00919_IBIO.csv", sheet = 1)
+
+datos.sim <- evaluado.sim %>% select(DNI, EMAIL) %>% left_join(evaluado.sim, by = "DNI") %>% 
+    select(EMAIL, EXAMEN)
+datos.its <- evaluado.its %>% select(DNI, EMAIL) %>% left_join(evaluado.its, by = "DNI") %>% 
+    select(EMAIL, EXAMEN)
+datos.ibio <- evaluado.ibio %>% select(DNI, EMAIL) %>% left_join(evaluado.ibio, by = "DNI") %>% 
+    select(EMAIL, EXAMEN)
+
+ciencias <- datos.sim %>% inner_join(ciencias, by = c("EMAIL" = "...1")) %>% select(-1) %>% 
+    arrange(EXAMEN)
+its.ciencias <- datos.its %>% inner_join(its.ciencias, by = c("EMAIL" = "...1")) %>% 
+    select(-1) %>% arrange(EXAMEN)
+ibio <- datos.ibio %>% inner_join(ibio, by = c("EMAIL" = "...1")) %>% select(-1) %>% 
+    arrange(EXAMEN)
+
+letras <- datos.sim %>% inner_join(letras, by = c("EMAIL" = "...1")) %>% select(-1) %>% 
+    arrange(EXAMEN)
+its.letras <- datos.its %>% inner_join(its.letras, by = c("EMAIL" = "...1")) %>% select(-1) %>% 
+    arrange(EXAMEN)
+
+```
+
+6. Escribir las matrices resultantes
+
+```{r}
+write.fwf(ciencias, "Simulacro_ciencias.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+          eol = "\r\n")
+write.fwf(its.ciencias, "Simulacro_ciencias_its.txt", rownames = FALSE, colnames = FALSE,
+          sep + "", eol = "\r\n")
+write.fwf(ibio, "Simulacro_ciencias_ibio.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+          eol = "\r\n")
+
+write.fwf(letras, "Simulacro_letras.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+          eol = "\r\n")
+write.fwf(its.letras, "Simulacro_letras_its.txt", rownames = FALSE, colnames = FALSE, sep + "", 
+          eol = "\r\n")
+
+```
+
+
+
