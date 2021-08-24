@@ -13,6 +13,26 @@ library(eRm)
 library(CTT)
 library(DT)
 library(rio)
+
+# Modificado para evaluaciones PUCP - Tablas calificación
+true.score <- function( dif.items, hab.inf = -6, hab.sup = 6, logit = TRUE) {
+    if (!logit) dif.items <- (dif.items-500)/100
+    puntaje <- 0
+    lista <- NULL
+    for(i in seq(hab.inf,hab.sup,0.001)) {
+        score <- c(i,sum(exp(i-dif.items)/(1 + exp(i-dif.items))))
+        if (puntaje == round( score[2] - 0.5, 0 )) {
+            if(is.null(lista)) lista <- score 
+            else lista <- rbind(lista,score)
+            puntaje <- puntaje + 1
+        }
+    }
+    lista <- data.frame(lista, row.names = paste0("Puntaje ",0:(puntaje-1)))
+    names(lista) <- c("Escala", "Puntaje.Aprox")
+    lista$Escala <- lista$Escala * 100 + 500
+    return(lista)
+}
+
 ```
 
 ```{r}
@@ -133,11 +153,11 @@ str.letras <- import("./Estructuras/00918_Versión_letras_COMPLETO.xls", sheet =
 
 ```{r}
 # Comparar versiones dificultades
-indicec_mat <- !is.na(str.ciencias$Medición[1:48])
-indicec_red <- !is.na(str.ciencias$Medición[49:72])
-indicec_lec <- !is.na(str.ciencias$Medición[73:96])
+indicec_mat <- !is.na(str.ciencias$`Medición`[1:48])
+indicec_red <- !is.na(str.ciencias$`Medición`[49:72])
+indicec_lec <- !is.na(str.ciencias$`Medición`[73:96])
 
-dstr.ciencias <- str.ciencias$Medición
+dstr.ciencias <- str.ciencias$`Medición`
   
 dstr.ciencias.mat <- dstr.ciencias[1:48][indicec_mat] - 
   (mean(dstr.ciencias[1:48][indicec_mat]) - mean(-rciencias.mat$betapar[indicec_mat]))
@@ -146,11 +166,11 @@ dstr.ciencias.red <- dstr.ciencias[49:72][indicec_red] -
 dstr.ciencias.lec <- dstr.ciencias[73:96][indicec_lec] - 
   (mean(dstr.ciencias[73:96][indicec_lec]) - mean(-rciencias.lec$betapar[indicec_lec]))
 
-indicel_lec <- !is.na(str.letras$Medición[1:28])
-indicel_red <- !is.na(str.letras$Medición[29:56])
-indicel_mat <- !is.na(str.letras$Medición[57:96])
+indicel_lec <- !is.na(str.letras$`Medición`[1:28])
+indicel_red <- !is.na(str.letras$`Medición`[29:56])
+indicel_mat <- !is.na(str.letras$`Medición`[57:96])
 
-dstr.letras <- str.letras$Medición
+dstr.letras <- str.letras$`Medición`
 
 dstr.letras.lec <- dstr.letras[1:28][indicel_lec] - (mean(dstr.letras[1:28][indicel_lec]) - mean(-rletras.lec$betapar[indicel_lec]))
 dstr.letras.red <- dstr.letras[29:56][indicel_red] - (mean(dstr.letras[29:56][indicel_red]) - mean(-rletras.red$betapar[indicel_red]))
@@ -185,9 +205,7 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-temp.diff <- 7  # Se retiran 23
-diff.ciencias.lec <- mean(dstr.ciencias.lec[-temp.diff]) - 
-  mean(-rciencias.lec$betapar[-temp.diff])
+diff.ciencias.lec <- mean(dstr.ciencias.lec) - mean(-rciencias.lec$betapar)
 
 plot(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], type = "none", cex = 0.7)
 text(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], c(1:28)[indicel_lec])
@@ -221,18 +239,18 @@ diff.letras.mat <- mean(dstr.letras.mat[-temp.diff]) -
 
 ```{r}
 estructura.ciencias <- data.frame(
-  medicion = c(-rciencias.mat$betapar + diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat]),
-               -rciencias.red$betapar + diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),
-               -rciencias.lec$betapar + diff.ciencias.lec + mean(dstr.ciencias[73:96][indicec_lec])),
+  medicion = c(-rciencias.mat$betapar - diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat]),
+               -rciencias.red$betapar - diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),
+               -rciencias.lec$betapar - diff.ciencias.lec + mean(dstr.ciencias[73:96][indicec_lec])),
   error = c(rciencias.mat$se.beta,
             rciencias.red$se.beta,
             rciencias.lec$se.beta)
   )
 
 estructura.letras <- data.frame(
-  medicion = c(-rletras.lec$betapar + diff.letras.lec + mean(dstr.letras[1:28][indicel_lec]),
-               -rletras.red$betapar + diff.letras.red + mean(dstr.letras[29:56][indicel_red]),
-               -rletras.mat$betapar + diff.letras.mat + mean(dstr.letras[57:96][indicel_mat])),
+  medicion = c(-rletras.lec$betapar - diff.letras.lec + mean(dstr.letras[1:28][indicel_lec]),
+               -rletras.red$betapar - diff.letras.red + mean(dstr.letras[29:56][indicel_red]),
+               -rletras.mat$betapar - diff.letras.mat + mean(dstr.letras[57:96][indicel_mat])),
   error = c(rletras.lec$se.beta,
             rletras.red$se.beta,
             rletras.mat$se.beta)
@@ -241,27 +259,20 @@ estructura.letras <- data.frame(
 ```
 
 ```{r}
-write.csv(estructura.ciencias1, "./Estructura_ciencias1B.csv", row.names = FALSE)
-write.csv(estructura.ciencias2, "./Estructura_ciencias2B.csv", row.names = FALSE)
-write.csv(estructura.letras1, "./Estructura_letras1B.csv", row.names = FALSE)
-write.csv(estructura.letras2, "./Estructura_letras2B.csv", row.names = FALSE)
+write.csv(estructura.ciencias, "./Estructura_ciencias.csv", row.names = FALSE)
+write.csv(estructura.letras, "./Estructura_letras.csv", row.names = FALSE)
 ```
 
 ```{r}
+medicion.ciencias <- data.frame(code = ciencias$code,
+   mat = pciencias.mat$theta.table$`Person Parameter` - diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat]),
+   red = pciencias.red$theta.table$`Person Parameter` - diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),
+   lec = pciencias.lec$theta.table$`Person Parameter` - diff.ciencias.lec + mean(dstr.ciencias[73:96][indicec_lec])
+  )
 
-# En este bloque se arma la prueba con puntajes parciales para valida la posibilidad
-# de utilziar puntajes brutos para el concurso de admisión.
-
-# Versión 1 ciencias
-
-v1ciencias <- bind_cols(ciencias1$code,
-                        ciencias1.mat$score,
-                        ciencias1.red$score,
-                        ciencias1.lec$score,
-                        pciencias1.mat[["theta.table"]][["Person Parameter"]],
-                        pciencias1.red[["theta.table"]][["Person Parameter"]],
-                        pciencias1.lec[["theta.table"]][["Person Parameter"]]) 
-names(v1ciencias) <- c("code", "mat", "red", "lec", "smat", "sred", "slec")
-
-
+medicion.letras <- data.frame(code = letras$code,
+  lec = pletras.lec$theta.table$`Person Parameter` - diff.letras.lec + mean(dstr.letras[1:28][indicel_lec]),
+  red = pletras.red$theta.table$`Person Parameter` - diff.letras.red + mean(dstr.letras[29:56][indicel_red]),
+  mat = pletras.mat$theta.table$`Person Parameter` - diff.letras.mat + mean(dstr.letras[57:96][indicel_mat])
+  )
 ```

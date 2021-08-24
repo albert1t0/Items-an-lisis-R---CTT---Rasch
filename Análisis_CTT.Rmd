@@ -53,8 +53,12 @@ its.letras <- read.fwf(
 )
 
 
-ciencias <- bind_rows(sim.ciencias, its.ciencias, ibio)
-letras <- bind_rows(sim.letras, its.letras)
+#ciencias <- bind_rows(sim.ciencias, its.ciencias, ibio)
+#letras <- bind_rows(sim.letras, its.letras)
+
+ciencias <- bind_rows(sim.ciencias, ibio)
+letras <- bind_rows(sim.letras)
+
 
 ```
 
@@ -149,8 +153,8 @@ aletras.lec <- distractorAnalysis(letras_lec, rep("A", 28), digits = 2)
 ```{r}
 versiones <- c("Ciencias", "Letras")
 secciones <- c("Lectura", "Matemática", "Redacción")
-selectInput("version", "Seleccione la versión de prueba", versiones)
-selectInput("seccion", "Seleccione la versión de prueba", secciones)
+selectInput("version", "Seleccione la versión de prueba", versiones, selected = 1)
+selectInput("seccion", "Seleccione la versión de prueba", secciones, selected = 1)
 ```
 
 ```{r}
