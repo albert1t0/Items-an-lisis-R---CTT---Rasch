@@ -186,16 +186,18 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-temp.diff <- c(6,8,10,12) # Se retiran de anclaje 19,32,37,44
+cmtemp.diff <- c(6,8,10,12) # Se retiran de anclaje 19,32,37,44
 
-diff.ciencias.mat <- mean(dstr.ciencias.mat[-temp.diff]) - 
-  mean(-rciencias.mat$betapar[1:48][indicec_mat][-temp.diff])
+diff.ciencias.mat <- mean(dstr.ciencias.mat[-cmtemp.diff]) - 
+  mean(-rciencias.mat$betapar[1:48][indicec_mat][-cmtemp.diff])
 
 plot(dstr.ciencias.red, -rciencias.red$betapar[indicec_red], type = "none", cex = 0.7)
 text(dstr.ciencias.red, -rciencias.red$betapar[indicec_red], c(1:24)[indicec_red])
 abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
+
+# No se excluyen los ítems
 
 diff.ciencias.red <- mean(dstr.ciencias.red) - mean(-rciencias.red$betapar)
 
@@ -205,6 +207,8 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
+# No se excluyen los ítems
+
 diff.ciencias.lec <- mean(dstr.ciencias.lec) - mean(-rciencias.lec$betapar)
 
 plot(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], type = "none", cex = 0.7)
@@ -212,6 +216,8 @@ text(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], c(1:28)[indicel_lec])
 abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
+
+# No se excluye los ítems
 
 diff.letras.lec <- mean(dstr.letras.lec) - mean(-rletras.lec$betapar)
 
@@ -221,9 +227,10 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-temp.diff <- c(6,9) # Se retira el 16 y 25
-diff.letras.red <- mean(dstr.letras.red[-temp.diff]) - 
-  mean(-rletras.red$betapar[-temp.diff])
+lrtemp.diff <- c(6,9) # Se retira el 16 y 25
+
+diff.letras.red <- mean(dstr.letras.red[-lrtemp.diff]) - 
+  mean(-rletras.red$betapar[-lrtemp.diff])
 
 plot(dstr.letras.mat, -rletras.mat$betapar[indicel_mat], type = "none", cex = 0.7)
 text(dstr.letras.mat, -rletras.mat$betapar[indicel_mat], c(1:40)[indicel_mat])
@@ -231,26 +238,27 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-temp.diff <- c(4,9,10) # Se retira 13, 34 y 36
-diff.letras.mat <- mean(dstr.letras.mat[-temp.diff]) - 
-  mean(-rletras.mat$betapar[-temp.diff])
+lmtemp.diff <- c(4,9,10) # Se retira 13, 34 y 36
+
+diff.letras.mat <- mean(dstr.letras.mat[-lmtemp.diff]) - 
+  mean(-rletras.mat$betapar[-lmtemp.diff])
 
 ```
 
 ```{r}
 estructura.ciencias <- data.frame(
-  medicion = c(-rciencias.mat$betapar - diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat]),
-               -rciencias.red$betapar - diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),
-               -rciencias.lec$betapar - diff.ciencias.lec + mean(dstr.ciencias[73:96][indicec_lec])),
+  medicion = c(-rciencias.mat$betapar + diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat][-cmtemp.diff]),
+               -rciencias.red$betapar + diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),
+               -rciencias.lec$betapar + diff.ciencias.lec + mean(dstr.ciencias[73:96][indicec_lec])),
   error = c(rciencias.mat$se.beta,
             rciencias.red$se.beta,
             rciencias.lec$se.beta)
   )
 
 estructura.letras <- data.frame(
-  medicion = c(-rletras.lec$betapar - diff.letras.lec + mean(dstr.letras[1:28][indicel_lec]),
-               -rletras.red$betapar - diff.letras.red + mean(dstr.letras[29:56][indicel_red]),
-               -rletras.mat$betapar - diff.letras.mat + mean(dstr.letras[57:96][indicel_mat])),
+  medicion = c(-rletras.lec$betapar + diff.letras.lec + mean(dstr.letras[1:28][indicel_lec]),
+               -rletras.red$betapar + diff.letras.red + mean(dstr.letras[29:56][indicel_red][-lrtemp.diff]),
+               -rletras.mat$betapar + diff.letras.mat + mean(dstr.letras[57:96][indicel_mat][-lmtemp.diff])),
   error = c(rletras.lec$se.beta,
             rletras.red$se.beta,
             rletras.mat$se.beta)
