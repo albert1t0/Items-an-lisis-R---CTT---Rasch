@@ -86,7 +86,8 @@ server <- function(input, output) {
          archivo <- input$identificador
          ext <- tools::file_ext(archivo$datapath)
          validate(need(ext == "xlsx", "El archivo Identificadores debe ser de tipo XLSX."))
-         read.xlsx( archivo$datapath, sheet = 2, startRow = 4)
+         tabla <- read.xlsx( archivo$datapath, sheet = 2, startRow = 4)
+         tabla[!duplicated(tabla[,2]),]
      })
      
      tabla.ordenitem <- eventReactive( input$procesar, {
