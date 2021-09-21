@@ -36,30 +36,112 @@ true.score <- function( dif.items, hab.inf = -6, hab.sup = 6, logit = TRUE) {
 ```
 
 ```{r}
-ciencias <- read.fwf("./Respuestas/Simulacro_ciencias.txt", c(5,48,24,24),
-                         colClasses = "character", col.names = c("code", "mat","red","lec"))
+apc.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ACP_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
 
-ibio <- read.fwf("./Respuestas/Simulacro_ciencias_ibio.txt", c(5,48,24,24),
-                         colClasses = "character", col.names = c("code", "mat","red","lec"))
+its.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ITS_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
 
-ciencias <- bind_rows(ciencias, ibio)
+ibio <- read.fwf(
+  "./DATA_CIENCIAS/ITS_ibio.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
 
-letras <- read.fwf("./Respuestas/Simulacro_letras.txt", c(5,28,28,40),
-                         colClasses = "character", col.names = c("code", "lec","red","mat"))
+itsp.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ITS+_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+
+apc.letras <- read.fwf(
+  "./DATA_LETRAS/ACP_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+its.letras <- read.fwf(
+  "./DATA_LETRAS/ITS_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+arq.letras <- read.fwf(
+  "./DATA_LETRAS/ITS_Arqui.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+arte.letras <- read.fwf(
+  "./DATA_LETRAS/ARTE_ITS.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+narte.letras <- read.fwf(
+  "./DATA_LETRAS/ARTE_NoITS.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+itsp.letras <- read.fwf(
+  "./DATA_LETRAS/ITS+_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+#ciencias <- bind_rows(apc.ciencias, its.ciencias, ibio, itsp.ciencias)
+#letras <- bind_rows(apc.letras, its.letras, arte.letras, narte.letras, arq.letras,itsp.letras)
+
+ciencias <- bind_rows(its.ciencias, ibio)
+letras <- bind_rows(its.letras, arq.letras)
+
 ```
 
 ```{r}
-
-ciencias_mat <- data.frame(matrix(unlist(strsplit(ciencias$mat, "")), 
-                                      nrow = dim(ciencias)[1], byrow = TRUE),stringsAsFactors = FALSE)
-names(ciencias_mat) <- paste0("item-",1:dim(ciencias_mat)[2])
-ciencias_red <- data.frame(matrix(unlist(strsplit(ciencias$red, "")), 
-                                      nrow = dim(ciencias)[1], byrow = TRUE),stringsAsFactors = FALSE)
-names(ciencias_red) <- paste0("item-",1:dim(ciencias_red)[2])
-ciencias_lec <- data.frame(matrix(unlist(strsplit(ciencias$lec, "")), 
-                                      nrow = dim(ciencias)[1], byrow = TRUE),stringsAsFactors = FALSE)
-names(ciencias_lec) <- paste0("item-",1:dim(ciencias_lec)[2])
+ciencias_mat <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$mat, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_mat) <- paste0("item-", 1:dim(ciencias_mat)[2])
+ciencias_red <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$red, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_red) <- paste0("item-", 1:dim(ciencias_red)[2])
+ciencias_lec <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$lec, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_lec) <- paste0("item-", 1:dim(ciencias_lec)[2])
 ```
+
 
 ```{r}
 letras_mat <- data.frame(matrix(unlist(strsplit(letras$mat, "")), 
@@ -72,6 +154,7 @@ letras_lec <- data.frame(matrix(unlist(strsplit(letras$lec, "")),
                                       nrow = dim(letras)[1], byrow = TRUE),stringsAsFactors = FALSE)
 names(letras_lec) <- paste0("item-",1:dim(letras_lec)[2])
 ```
+
 
 ```{r}
 ciencias.mat <- score(ciencias_mat, rep("A", 48), output.scored = TRUE)
@@ -145,9 +228,9 @@ sepletras.lec <- SepRel(pletras.lec)
 | Letras   | `r round(sepletras.lec[[1]],3)`   | `r round(sepletras.red[[1]],3)`   | `r round(sepletras.mat[[1]],3)`   |
 
 ```{r}
-str.ciencias <- import("./Estructuras/00918_Versión_ciencias_ORIGINAL.xls", sheet = 1, skip = 2, col_names = TRUE)
+str.ciencias <- import("./00923 Versión ciencias.xls", sheet = 1, skip = 2, col_names = TRUE)
 
-str.letras <- import("./Estructuras/00918_Versión_letras_ORIGINAL.xls", sheet = 1, skip = 2, col_names = TRUE)
+str.letras <- import("./00923 Versión letras.xls", sheet = 1, skip = 2, col_names = TRUE)
 
 ```
 
@@ -186,7 +269,7 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-cmtemp.diff <- c(6,8,10,12) # Se retiran de anclaje 19,32,37,44
+cmtemp.diff <- c(36,7,38,41,28,12,24,17,34,46) # Se retiran de anclaje
 
 diff.ciencias.mat <- mean(dstr.ciencias.mat[-cmtemp.diff]) - 
   mean(-rciencias.mat$betapar[indicec_mat][-cmtemp.diff])
@@ -197,9 +280,10 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-# No se excluyen los ítems - diff = 0
+crtemp.diff <- c(23,13,3,19,10,21,17,20,15)
 
-diff.ciencias.red <- mean(dstr.ciencias.red) - mean(-rciencias.red$betapar[indicec_red])
+diff.ciencias.red <- mean(dstr.ciencias.red[-crtemp.diff]) - 
+  mean(-rciencias.red$betapar[indicec_red][-crtemp.diff])
 
 plot(dstr.ciencias.lec, -rciencias.lec$betapar[indicec_lec], type = "none", cex = 0.7)
 text(dstr.ciencias.lec, -rciencias.lec$betapar[indicec_lec], c(1:24)[indicec_lec])
@@ -207,9 +291,10 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-# No se excluyen los ítems - diff = 0
+cltemp.diff <- c(16,14,18,11,3,2)
 
-diff.ciencias.lec <- mean(dstr.ciencias.lec) - mean(-rciencias.lec$betapar[indicec_lec])
+diff.ciencias.lec <- mean(dstr.ciencias.lec[-cltemp.diff]) - 
+  mean(-rciencias.lec$betapar[indicec_lec][-cltemp.diff])
 
 plot(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], type = "none", cex = 0.7)
 text(dstr.letras.lec, -rletras.lec$betapar[indicel_lec], c(1:28)[indicel_lec])
@@ -217,9 +302,10 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-# No se excluye los ítems - diff = 0
+lltemp.diff <- c(28,23,24,13,5,27,26,6,17,18,20)
 
-diff.letras.lec <- mean(dstr.letras.lec) - mean(-rletras.lec$betapar[indicel_lec])
+diff.letras.lec <- mean(dstr.letras.lec[-lltemp.diff]) - 
+  mean(-rletras.lec$betapar[indicel_lec][-lltemp.diff])
 
 plot(dstr.letras.red, -rletras.red$betapar[indicel_red], type = "none", cex = 0.7)
 text(dstr.letras.red, -rletras.red$betapar[indicel_red], c(1:28)[indicel_red])
@@ -227,10 +313,10 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-lrtemp.diff <- c(6,9) # Se retira el 16 y 25
+lrtemp.diff <- c(22,20,5,3,8,11,27,15,1,18,6)
 
 diff.letras.red <- mean(dstr.letras.red[-lrtemp.diff]) - 
-  mean(-rletras.red$betapar[indicel_red][-lrtemp.diff])
+ mean(-rletras.red$betapar[indicel_red][-lrtemp.diff])
 
 plot(dstr.letras.mat, -rletras.mat$betapar[indicel_mat], type = "none", cex = 0.7)
 text(dstr.letras.mat, -rletras.mat$betapar[indicel_mat], c(1:40)[indicel_mat])
@@ -238,7 +324,7 @@ abline(0,1)
 abline(-0.5,1, col = "red", lty = "dashed")
 abline(0.5,1, col = "red", lty = "dashed")
 
-lmtemp.diff <- c(4,9,10) # Se retira 13, 34 y 36
+lmtemp.diff <- c(22,4,24,15,9,29)
 
 diff.letras.mat <- mean(dstr.letras.mat[-lmtemp.diff]) - 
   mean(-rletras.mat$betapar[indicel_mat][-lmtemp.diff])
@@ -272,11 +358,14 @@ estructura.letras <- data.frame(
 ```
 
 ```{r}
-write.csv(estructura.ciencias, "./Estructura_ciencias.csv", row.names = FALSE)
-write.csv(estructura.letras, "./Estructura_letras.csv", row.names = FALSE)
+file1 <- paste0("Estructura_ciencias_", Sys.Date(),".csv")
+file2 <- paste0("Estructura_letras_", Sys.Date(),".csv")
+
+write.csv(estructura.ciencias, file1, row.names = FALSE)
+write.csv(estructura.letras, file2, row.names = FALSE)
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 medicion.ciencias <- data.frame(code = ciencias$code,
    mat = pciencias.mat$theta.table$`Person Parameter` - diff.ciencias.mat + mean(dstr.ciencias[1:48][indicec_mat]),
    red = pciencias.red$theta.table$`Person Parameter` - diff.ciencias.red + mean(dstr.ciencias[49:72][indicec_red]),

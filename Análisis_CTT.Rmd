@@ -1,7 +1,7 @@
 ---
-title: "Análisis de CTT y de alternativas - Agosto 2021"
+title: "Análisis de CTT y de alternativas - Setiembre 2021"
 author: "CMEC - PUCP"
-date: "23/8/2021"
+date: "20/9/2021"
 output: html_document
 runtime: shiny
 ---
@@ -17,48 +17,82 @@ library(openxlsx)
 ```
 
 ```{r}
-sim.ciencias <- read.fwf(
-  "./Respuestas/Simulacro_ciencias.txt",
+apc.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ACP_ciencias.txt",
   c(5, 48, 24, 24),
   colClasses = "character",
   col.names = c("code", "mat", "red", "lec")
 )
 
 its.ciencias <- read.fwf(
-  "./Respuestas/Simulacro_ciencias_its.txt",
+  "./DATA_CIENCIAS/ITS_ciencias.txt",
   c(5, 48, 24, 24),
   colClasses = "character",
   col.names = c("code", "mat", "red", "lec")
 )
 
 ibio <- read.fwf(
-  "./Respuestas/Simulacro_ciencias_ibio.txt",
+  "./DATA_CIENCIAS/ITS_ibio.txt",
   c(5, 48, 24, 24),
   colClasses = "character",
   col.names = c("code", "mat", "red", "lec")
 )
 
-sim.letras <- read.fwf(
-  "./Respuestas/Simulacro_letras.txt",
+itsp.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ITS+_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+
+apc.letras <- read.fwf(
+  "./DATA_LETRAS/ACP_letras.txt",
   c(5, 28, 28, 40),
   colClasses = "character",
   col.names = c("code", "lec", "red", "mat")
 )
 
 its.letras <- read.fwf(
-  "./Respuestas/Simulacro_letras_its.txt",
+  "./DATA_LETRAS/ITS_letras.txt",
   c(5, 28, 28, 40),
   colClasses = "character",
   col.names = c("code", "lec", "red", "mat")
 )
 
+arq.letras <- read.fwf(
+  "./DATA_LETRAS/ITS_Arqui.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
 
-#ciencias <- bind_rows(sim.ciencias, its.ciencias, ibio)
-#letras <- bind_rows(sim.letras, its.letras)
+arte.letras <- read.fwf(
+  "./DATA_LETRAS/ARTE_ITS.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
 
-ciencias <- bind_rows(sim.ciencias, ibio)
-letras <- bind_rows(sim.letras)
+narte.letras <- read.fwf(
+  "./DATA_LETRAS/ARTE_NoITS.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
 
+itsp.letras <- read.fwf(
+  "./DATA_LETRAS/ITS+_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+#ciencias <- bind_rows(apc.ciencias, its.ciencias, ibio, itsp.ciencias)
+#letras <- bind_rows(apc.letras, its.letras, arte.letras, narte.letras, arq.letras,itsp.letras)
+
+ciencias <- bind_rows(its.ciencias, ibio)
+letras <- bind_rows(its.letras, arq.letras)
 
 ```
 
