@@ -1,0 +1,307 @@
+---
+title: "Calificación ITS2022"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(CTT)
+library(rio)
+
+# Modificado para evaluaciones PUCP - Tablas calificación
+true.score <- function(dif.items, hab.inf = -6, hab.sup = 6, logit = TRUE) {
+    if (!logit) dif.items <- (dif.items - 500)/100
+    puntaje <- 0
+    lista <- NULL
+    for (i in seq(hab.inf,hab.sup,0.001)) {
+        score <- c(i,sum(exp(i - dif.items)/(1 + exp(i - dif.items))))
+        if (puntaje == round( score[2] - 0.5, 0 )) {
+            if (is.null(lista)) lista <- score 
+            else lista <- rbind(lista,score)
+            puntaje <- puntaje + 1
+        }
+    }
+    lista <- data.frame(lista)
+    names(lista) <- c("Escala", "Puntaje")
+    lista$Escala <- lista$Escala * 100 + 500
+    lista$Escala[1] <- 0    #Se trunca a cero
+    lista$Puntaje <- round(lista$Puntaje,0)
+    # Fila adicional para 1000 puntos
+    lista[dim(lista)[1] + 1,] <- c(1000, dim(lista)[1]) #Se agrega para todas correctas 1000
+    return(data.frame( Puntaje = lista$Puntaje, Escala = lista$Escala))
+}
+
+blancos <- function(respuestas) {
+    blancos <-  sum(str_count(respuestas, " "))
+    return(blancos)
+}
+
+```
+
+#1. Cara de respuestas en formato DTI
+
+En esta sección se cargan las respuestas de los archivos tipo DTI. Se juntan en una sola tabla para cada uno delos procesos.
+
+```{r}
+apc.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ACP_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+its.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ITS_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+ibio <- read.fwf(
+  "./DATA_CIENCIAS/ITS_ibio.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+itsp.ciencias <- read.fwf(
+  "./DATA_CIENCIAS/ITS+_ciencias.txt",
+  c(5, 48, 24, 24),
+  colClasses = "character",
+  col.names = c("code", "mat", "red", "lec")
+)
+
+
+apc.letras <- read.fwf(
+  "./DATA_LETRAS/ACP_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+its.letras <- read.fwf(
+  "./DATA_LETRAS/ITS_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+arq.letras <- read.fwf(
+  "./DATA_LETRAS/ITS_Arqui.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+arte.letras <- read.fwf(
+  "./DATA_LETRAS/ARTE_ITS.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+narte.letras <- read.fwf(
+  "./DATA_LETRAS/ARTE_NoITS.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+itsp.letras <- read.fwf(
+  "./DATA_LETRAS/ITS+_letras.txt",
+  c(5, 28, 28, 40),
+  colClasses = "character",
+  col.names = c("code", "lec", "red", "mat")
+)
+
+ciencias <- bind_rows(apc.ciencias, its.ciencias, ibio, itsp.ciencias)
+letras <- bind_rows(apc.letras, its.letras, arte.letras, narte.letras, arq.letras,itsp.letras)
+
+```
+
+#2. Se generan als matrices de resupuestas.
+
+Se genera para cada una de las secciones de la prueba una matriz de respuestas.
+
+```{r}
+ciencias_mat <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$mat, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_mat) <- paste0("item-", 1:dim(ciencias_mat)[2])
+ciencias_red <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$red, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_red) <- paste0("item-", 1:dim(ciencias_red)[2])
+ciencias_lec <-
+  data.frame(matrix(
+    unlist(strsplit(ciencias$lec, "")),
+    nrow = dim(ciencias)[1],
+    byrow = TRUE
+  ),
+  stringsAsFactors = FALSE)
+names(ciencias_lec) <- paste0("item-", 1:dim(ciencias_lec)[2])
+```
+
+
+```{r}
+letras_mat <- data.frame(matrix(
+    unlist(strsplit(letras$mat, "")),
+    nrow = dim(letras)[1],
+    byrow = TRUE
+), stringsAsFactors = FALSE)
+names(letras_mat) <- paste0("item-", 1:dim(letras_mat)[2])
+letras_red <- data.frame(matrix(
+    unlist(strsplit(letras$red, "")),
+    nrow = dim(letras)[1],
+    byrow = TRUE
+), stringsAsFactors = FALSE)
+names(letras_red) <- paste0("item-", 1:dim(letras_red)[2])
+letras_lec <- data.frame(matrix(
+    unlist(strsplit(letras$lec, "")),
+    nrow = dim(letras)[1],
+    byrow = TRUE
+), stringsAsFactors = FALSE)
+names(letras_lec) <- paste0("item-", 1:dim(letras_lec)[2])
+```
+
+#3. Se califican las secciones con la clave
+
+Se califica cada una de las secciones utilizando una clave única que es la 'A'.
+Previamente se ha verificado el funcionamiento de todos los ítems de la evaluación.
+
+```{r}
+ciencias.mat <- score(ciencias_mat, rep("A", 48), output.scored = TRUE)
+ciencias.red <- score(ciencias_red, rep("A", 24), output.scored = TRUE)
+ciencias.lec <- score(ciencias_lec, rep("A", 24), output.scored = TRUE)
+
+letras.mat <- score(letras_mat, rep("A", 40), output.scored = TRUE)
+letras.red <- score(letras_red, rep("A", 28), output.scored = TRUE)
+letras.lec <- score(letras_lec, rep("A", 28), output.scored = TRUE)
+```
+
+#4. Se arman las tablas con puntajes, buenas, incorrectas y blancas.
+
+Se arman las tablas con respuestas de los evaluados
+
+```{r}
+resultados.ciencias <- tibble(EXAMEN = ciencias$code, MATC = ciencias.mat$score,
+                              REDC = ciencias.red$score, LECC = ciencias.lec$score)
+
+resultados.ciencias$MATB <- apply(ciencias_mat, 1, blancos)
+resultados.ciencias$REDB <- apply(ciencias_red,1 , blancos)
+resultados.ciencias$LECB <-  apply(ciencias_lec, 1,blancos)
+
+resultados.ciencias <- mutate(resultados.ciencias, MATI = 48 - MATC - MATB,
+                              REDI = 24 - REDC - REDB, LECI = 24 - LECC - LECB)
+
+resultados.letras <- tibble(EXAMEN = letras$code, MATC = letras.mat$score,
+                              REDC = letras.red$score, LECC = letras.lec$score)
+
+resultados.letras$MATB <- apply(letras_mat, 1, blancos)
+resultados.letras$REDB <- apply(letras_red,1 , blancos)
+resultados.letras$LECB <-  apply(letras_lec, 1,blancos)
+
+resultados.letras <- mutate(resultados.letras, MATI = 40 - MATC - MATB,
+                              REDI = 28 - REDC - REDB, LECI = 28 - LECC - LECB)
+
+```
+
+#5. Se cargan los estadśiticos para el calculo de las tabla de calificación
+
+Se cargan las estructuras de las pruebas para elaborar tablas de calificación
+
+```{r}
+str.ciencias <- import("./00923 Versión ciencias_FINAL.xls", sheet = 1, skip = 2)
+str.letras <- import("./00923 Versión letras_FINAL.xls", sheet = 1, skip = 2)
+
+tabla.cie.mat <- true.score(str.ciencias$Medición[1:48])
+names(tabla.cie.mat)[2] <- "MAT.ESC"
+tabla.cie.red <- true.score(str.ciencias$Medición[49:72])
+names(tabla.cie.red)[2] <- "RED.ESC"
+tabla.cie.lec <- true.score(str.ciencias$Medición[73:96])
+names(tabla.cie.lec)[2] <- "LEC.ESC"
+
+tabla.let.mat <- true.score(str.letras$Medición[57:96])
+names(tabla.let.mat)[2] <- "MAT.ESC"
+tabla.let.red <- true.score(str.letras$Medición[29:56])
+names(tabla.let.red)[2] <- "RED.ESC"
+tabla.let.lec <- true.score(str.letras$Medición[1:28])
+names(tabla.let.lec)[2] <- "LEC.ESC"
+```
+
+#6. Se registran los puntajes escaladas para cada área
+
+Se agrega los puntajes de escala a las matrices de resultados
+
+```{r}
+resultados.ciencias <- left_join(resultados.ciencias, tabla.cie.mat, by = c("MATC" = "Puntaje")) 
+resultados.ciencias <- left_join(resultados.ciencias, tabla.cie.red, by = c("REDC" = "Puntaje"))  
+resultados.ciencias <- left_join(resultados.ciencias, tabla.cie.lec, by = c("LECC" = "Puntaje"))
+
+resultados.letras <- left_join(resultados.letras, tabla.let.mat, by = c("MATC" = "Puntaje"))
+resultados.letras <- left_join(resultados.letras, tabla.let.red, by = c("REDC" = "Puntaje"))
+resultados.letras <- left_join(resultados.letras,tabla.let.lec, by = c("LECC" = "Puntaje"))
+```
+
+#7. Se cargan las identificaciones
+
+Se crea la matriz de datos de identificación
+
+```{r}
+id.acp <- read.csv("./Identifica/ACP_00924.csv", colClasses = "character")
+id.acp$MODALIDAD <- "ACP"
+id.arte <- read.csv("./Identifica/ARTE_ITS_00947.csv", colClasses = "character")
+id.arte$MODALIDAD <- "ARTE ITS"
+id.narte <- read.csv("./Identifica/ARTE_NO_ITS_00948.csv", colClasses = "character")
+id.narte$MODALIDAD <- "ARTE NO ITS"
+id.ibio <- read.csv("./Identifica/IBIO_00922.csv", colClasses = "character")
+id.ibio$MODALIDAD <- "IBIO"
+id.its <- read.csv("./Identifica/ITS_00923.csv", colClasses = "character")
+id.its$MODALIDAD <- "ITS"
+id.its4p <- read.csv("./Identifica/ITS+4_00933.csv", colClasses = "character")
+id.its4p$MODALIDAD <- "ITS P4"
+
+id.todos <- bind_rows(id.acp, id.arte, id.narte, id.ibio, id.its, id.its4p)
+```
+
+Se agregan los identificadores a las matrices de resultados
+
+```{r}
+resultados.ciencias <- right_join(id.todos, resultados.ciencias, by = "EXAMEN")
+resultados.letras <- right_join(id.todos, resultados.letras, by = "EXAMEN")
+```
+
+#8. Se calcula el puntaje para el concurso por vacantes
+
+Se calcula el puntaje final ya que no hay bonificaciones por discapacidad
+
+```{r}
+resultados.ciencias <- mutate(resultados.ciencias, PUNTAJE.TOTAL = .6 * MAT.ESC + .2 * RED.ESC + .2 * LEC.ESC)
+resultados.letras <- mutate(resultados.letras, PUNTAJE.TOTAL = .5 * MAT.ESC + .25 * RED.ESC + .25 * LEC.ESC)
+```
+
+#9. Reportes finales y mérito.
+
+```{r}
+final.ciencias <- resultados.ciencias %>% group_by(MODALIDAD, UNIDAD, GRUPO.DE.ADMISIÓN) %>% 
+  mutate( MERITO = rank(-PUNTAJE.TOTAL, ties.method = "min"))
+final.letras <- resultados.letras %>% group_by(MODALIDAD, UNIDAD, GRUPO.DE.ADMISIÓN) %>% 
+  mutate( MERITO = rank(-PUNTAJE.TOTAL, ties.method = "min"))
+
+```
+
+```{r}
+export(final.ciencias, "Reporte-final-ciencias.xlsx")
+export(final.letras, "Reporte-final-letras.xlsx")
+```
+

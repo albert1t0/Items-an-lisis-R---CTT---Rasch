@@ -1,5 +1,5 @@
 ---
-title: "Análisis IRT - Agosto"
+title: "Análisis Rasch - Agosto"
 author: "CMEC - PUCP"
 date: "23/8/2021"
 output: html_document
